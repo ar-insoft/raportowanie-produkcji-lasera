@@ -1,25 +1,21 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
+import 'semantic-ui-css/semantic.min.css'
+import { ToastContainer, toast } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css' 
 import './App.css';
+import RaportowanieForm from './raportowanieLasera/components/RaportowanieForm'
 
 class App extends Component {
   render() {
     return (
       <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
+        <RaportowanieForm />
+        <ToastContainer
+          position={toast.POSITION.TOP_RIGHT}
+          closeOnClick={false}
+          autoClose={6000}
+          hideProgressBar={true}
+        />  
       </div>
     );
   }
