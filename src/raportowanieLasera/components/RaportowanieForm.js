@@ -3,6 +3,7 @@ import { Form, Input, Button, Table, Container, List, Header, Label, Icon, Segme
 import logo from '../../bar-code.png';
 import './RaportowanieForm.css'
 import RaportujLaser from '../modules/RaportujLaser'
+import DetaleForm from './DetaleForm'
 
 class RaportowanieForm extends Component {
     constructor(props) {
@@ -34,7 +35,20 @@ class RaportowanieForm extends Component {
     }
 
     handleScan = () => {
-        this.state.raportujLaser.wyslijNaSerwer(raportujLaser => this.setState({ raportujLaser: raportujLaser }))
+        this.state.raportujLaser.wyslijNaSerwer({}, raportujLaser => this.setState({ raportujLaser: raportujLaser }))
+    }
+
+    handleRozpocznijPrace = () => {
+        //this.state.raportujLaser.setter({ rozpocznij_prace: 1 })
+        this.state.raportujLaser.wyslijNaSerwer({ rozpocznij_prace: 1 }, raportujLaser => this.setState({ raportujLaser: raportujLaser }))
+    }
+
+    handlePrzerwijPrace = (idPraceLaser) => {
+        this.state.raportujLaser.wyslijNaSerwer({ przerwij_prace: idPraceLaser }, raportujLaser => this.setState({ raportujLaser: raportujLaser }))
+    }
+
+    handleZakonczPrace = (idPraceLaser) => {
+        this.state.raportujLaser.wyslijNaSerwer({ zakoncz_prace: idPraceLaser }, raportujLaser => this.setState({ raportujLaser: raportujLaser }))
     }
 
     handleRaport = () => {
@@ -90,9 +104,9 @@ class RaportowanieForm extends Component {
                                 <Icon name='external' />
                                 171121_2_304L_1
                             </Button>
-                            <Button icon onClick={(evt) => this.setScan('171121_2_304L')} type='button'>
+                            <Button icon onClick={(evt) => this.setScan('180517_2_304L_4')} type='button'>
                                 <Icon name='external' />
-                                171121_2_304L
+                                180517_2_304L_4
                             </Button>
                         </Segment>
                         <Segment>
@@ -115,10 +129,24 @@ class RaportowanieForm extends Component {
                                         Program
                                     </Table.Cell>
                                         <Table.Cell width={3} className={programOdczytany ? '' : 'niepoprawne_dane'}>
-                                            {programOdczytany ? <Program raportujLaser={raportujLaser}/> : 'brak informacji o programie'}
+                                            {programOdczytany ?
+                                                <Program raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
+                                            :
+                                                'brak informacji o programie'}
                                     </Table.Cell>
                                 </Table.Row>
-                                <Table.Row key='liczba_powtorzen'>
+                                    <Table.Row key='detaleProgramu'>
+                                        <Table.Cell width={1}>
+                                            Detale programu
+                                    </Table.Cell>
+                                        <Table.Cell width={3} className={programOdczytany ? '' : 'niepoprawne_dane'}>
+                                            {programOdczytany ?
+                                                <DetaleForm raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
+                                                :
+                                                'brak'}
+                                        </Table.Cell>
+                                    </Table.Row>
+                                    <Table.Row key='liczba_powtorzen' disabled>
                                         <Table.Cell width={1}>
                                         Liczba powtórzeń
                                     </Table.Cell>
@@ -139,7 +167,12 @@ class RaportowanieForm extends Component {
                                             Trwające prace
                                     </Table.Cell>
                                         <Table.Cell width={3} className={programOdczytany ? '' : 'niepoprawne_dane'}>
-                                            brak
+                                            {pracownikOdczytany
+                                                ?
+                                                <TrwajacePrace raportujLaser={raportujLaser}
+                                                    handlePrzerwijPrace={this.handlePrzerwijPrace}
+                                                    handleZakonczPrace={this.handleZakonczPrace} />
+                                                : ''}
                                     </Table.Cell>
                                     </Table.Row>
                             </Table.Body>
@@ -148,7 +181,6 @@ class RaportowanieForm extends Component {
                     </Segment.Group>
                 </Form>
             </Container>
-
         )
     }
 }
@@ -156,15 +188,10 @@ class RaportowanieForm extends Component {
 class Program extends Component {
     constructor(props) {
         super(props);
-
-        this.state = {
-        }
-
-        this.textInput_liczba_powtorzen = React.createRef()
     }
 
     render() {
-        const { raportujLaser } = this.props
+        const { raportujLaser, handleRozpocznijPrace } = this.props
         const { kartaProgramu, employee, } = raportujLaser
         const pracownikOdczytany = raportujLaser.isPracownikOdczytany()
         const programOdczytany = raportujLaser.isProgramOdczytany()
@@ -184,7 +211,7 @@ class Program extends Component {
                     </List>
                 </Segment>
                 <Segment>
-                    <Button type='button' icon onClick={(evt) => this.handleRozpocznijPrace()}
+                    <Button type='button' icon onClick={(evt) => handleRozpocznijPrace()}
                         disabled={!pracownikOdczytany || !programOdczytany}
                     >
                         <Icon name='send' />
@@ -194,10 +221,55 @@ class Program extends Component {
                 </Segment>
             </Segment.Group>
         </div >
-        
     )
-
     }
+}
+
+const TrwajacePrace = (props) => {
+    const { raportujLaser, handlePrzerwijPrace, handleZakonczPrace } = props
+    const { pracePracownika, employee, } = raportujLaser
+    return (
+    <Table celled striped>
+        <Table.Header>
+            <Table.Row>
+                <Table.Cell>
+                    Program
+                </Table.Cell>
+                <Table.Cell>
+                    Rozpoczęcie
+                </Table.Cell>
+                <Table.Cell>
+                    Akcje
+                </Table.Cell>
+            </Table.Row>
+        </Table.Header>
+        <Table.Body>
+            {pracePracownika.map(praca => 
+                <Table.Row key={praca.id}>
+                    <Table.Cell>
+                        {praca.id_karta_programu}
+                    </Table.Cell>
+                    <Table.Cell>
+                            {praca.work_start}
+                    </Table.Cell>
+                    <Table.Cell>
+                            <Button type='button' icon onClick={(evt) => handlePrzerwijPrace(praca.id)}
+                            >
+                                <Icon name='send' />
+                                Przerwij pracę
+                            </Button>
+                            <Button type='button' icon onClick={(evt) => handleZakonczPrace(praca.id)}
+                                disabled={true}
+                            >
+                                <Icon name='send' />
+                                Zakończ pracę
+                            </Button>
+                    </Table.Cell>
+                </Table.Row>
+            )}
+        </Table.Body>
+        </Table>
+    )
 }
 
 export default RaportowanieForm

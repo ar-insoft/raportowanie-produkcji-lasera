@@ -5,6 +5,8 @@ class RaportujLaser {
         this.employeeId = -1
         this.employee = {}
         this.kartaProgramu = {}
+        this.pracePracownika = []
+        this.detaleProgramu = []
     }
 
     setter = (changes) => {
@@ -29,8 +31,8 @@ class RaportujLaser {
         return this.kartaProgramu.idProgramu
     }
 
-    wyslijNaSerwer = (promiseHandler) => {
-        const doWyslania = { ...this }
+    wyslijNaSerwer = (additionalFields, promiseHandler) => {
+        const doWyslania = Object.assign({ ...this }, { ...additionalFields })
         delete doWyslania.employee
         delete doWyslania.kartaProgramu
         const doWyslaniaJson = JSON.stringify(doWyslania)
@@ -56,6 +58,7 @@ class RaportujLaser {
                 this.idEmployee = fromServer.employee ? fromServer.employee.id : ''
                 this.idProgramu = fromServer.kartaProgramu ? fromServer.kartaProgramu.idProgramu : ''
                 this.kartaProgramu = fromServer.kartaProgramu
+                this.pracePracownika = fromServer.pracePracownika
                     
                 promiseHandler(this)
             })
