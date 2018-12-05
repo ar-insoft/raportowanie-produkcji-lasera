@@ -1,9 +1,14 @@
 import React, { Component } from 'react'
 import { Form, Input, Button, Table, Container, List, Header, Label, Icon, Segment, Item } from 'semantic-ui-react'
+import { toast } from 'react-toastify'
+import classNames from 'classnames/bind'
 import logo from '../../bar-code.png';
 import './RaportowanieForm.css'
 import RaportujLaser from '../modules/RaportujLaser'
+import DataProvider from '../modules/DataProvider'
 import DetaleForm from './DetaleForm'
+import InformacjeZSerwera from './InformacjeZSerwera'
+import { afterSecondsOf } from '../modules/Timers'
 
 class RaportowanieForm extends Component {
     constructor(props) {
@@ -12,6 +17,7 @@ class RaportowanieForm extends Component {
         this.state = {
             isLoading: false,
             raportujLaser: new RaportujLaser(),
+            wlasnieOdczytanoPracownika: false,
         }
 
         this.textInput_liczba_powtorzen = React.createRef()
@@ -20,6 +26,14 @@ class RaportowanieForm extends Component {
     componentDidUpdate(prevProps, prevState, snapshot) {
     }
     componentDidMount() {
+        DataProvider.testKonfiguracji(fromServer => {
+            console.log('RaportowanieForm.componentDidMount', !fromServer.konfiguracja_poprawna, fromServer)
+            if (!fromServer.konfiguracja_poprawna) {
+                this.state.raportujLaser.serverInfo = { error: fromServer.bledy_konfiguracji }
+                console.log('RaportowanieForm.componentDidMount', this.state.raportujLaser.serverInfo)
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), })
+            }
+        })
     }
 
     handleChange = (e) => {
@@ -34,17 +48,61 @@ class RaportowanieForm extends Component {
         if (char === 13) this.handleScan()
     }
 
-    handleScan = () => {
-        this.state.raportujLaser.wyslijNaSerwer({}, raportujLaser => this.setState({ raportujLaser: raportujLaser }))
+    rozpocznijLaczenieZSerwerem = () => {
+        this.setState({ isLoading: true, raportujLaser: Object.assign(this.state.raportujLaser, { serverInfo: {}}) })
     }
 
+    handleScan = () => {
+        this.setState({ isLoading: true })
+        this.state.raportujLaser.wyslijNaSerwer({},
+            raportujLaser => {
+                this.setState({ raportujLaser: raportujLaser, isLoading: false })
+                if (raportujLaser.wlasnieOdczytano === 'pracownik') {
+                    this.setState({ wlasnieOdczytanoPracownika: true })
+                    afterSecondsOf(3).subscribe(x => this.setState({ wlasnieOdczytanoPracownika: false }))
+                }
+            }, error => {
+                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                this.setState({ isLoading: false });
+            })
+    }
+    handleScan3 = () => {
+        this.setState({ isLoading: true })
+        DataProvider.wyslijSkanNaSerwer(this.state.raportujLaser, {},
+            fromServer => {
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
+                if (fromServer.wlasnieOdczytano === 'pracownik') {
+                    this.setState({ wlasnieOdczytanoPracownika: true })
+                    afterSecondsOf(3).subscribe(x => this.setState({ wlasnieOdczytanoPracownika: false }))
+                }
+            }, error => {
+                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                this.setState({ isLoading: false });
+            })
+    }    
+
     handleRozpocznijPrace = () => {
-        //this.state.raportujLaser.setter({ rozpocznij_prace: 1 })
-        this.state.raportujLaser.wyslijNaSerwer({ rozpocznij_prace: 1 }, raportujLaser => this.setState({ raportujLaser: raportujLaser }))
+        this.rozpocznijLaczenieZSerwerem()
+        this.state.raportujLaser.scanInput = ''
+        this.state.raportujLaser.wyslijNaSerwer(
+            { rozpocznij_prace: 1 },
+            fromServer => {
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
+            }, error => {
+                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                this.setState({ isLoading: false });
+            })
     }
 
     handlePrzerwijPrace = (idPraceLaser) => {
-        this.state.raportujLaser.wyslijNaSerwer({ przerwij_prace: idPraceLaser }, raportujLaser => this.setState({ raportujLaser: raportujLaser }))
+        this.rozpocznijLaczenieZSerwerem()
+        this.state.raportujLaser.wyslijNaSerwer({ przerwij_prace: idPraceLaser },
+            fromServer => {
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
+            }, error => {
+                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                this.setState({ isLoading: false });
+            })
     }
 
     handleZakonczPrace = (idPraceLaser) => {
@@ -68,12 +126,13 @@ class RaportowanieForm extends Component {
         console.log('programOdczytany ' + programOdczytany)
         return (
             <Container textAlign='center'>
-                <Form>
+                <Form autoComplete="off" loading={this.state.isLoading}>
                     <Header as='h2'>Raportowanie produkcji lasera</Header>
                     <Segment.Group>                        
                         <Segment compact>
-                            <Item.Group className='scan'>
-                            <Item>
+                            <div style={{ display: 'flex' }}>
+                            <Item.Group>
+                                <Item className='scan'>
                                     <Item.Image size='tiny' src={logo} />
 
                                 <Item.Content>
@@ -93,7 +152,9 @@ class RaportowanieForm extends Component {
                                         </Item.Description>
                                 </Item.Content>
                                 </Item>
-                                </Item.Group>
+                            </Item.Group>
+                                    <InformacjeZSerwera raportujLaser={this.state.raportujLaser} />
+                            </div>
                         </Segment>
                         <Segment>
                             <Button icon onClick={(evt) => this.setScan(90065202)} type='button'>
@@ -108,27 +169,32 @@ class RaportowanieForm extends Component {
                                 <Icon name='external' />
                                 180517_2_304L_4
                             </Button>
+                            <Button icon onClick={(evt) => { this.setScan('2_1'); this.handleScan() }} type='button'>
+                                <Icon name='external' />
+                                2_1
+                            </Button>
                         </Segment>
                         <Segment>
                         <Table celled striped>
-                            {/* <Table.Header>
-            <Table.Row>
-            </Table.Row>
-        </Table.Header> */}
                             <Table.Body>
                                 <Table.Row key='pracownik'>
                                     <Table.Cell width={1}>
                                         Pracownik
                                     </Table.Cell>
-                                        <Table.Cell width={3} className={pracownikOdczytany ? '' : 'niepoprawne_dane'}>
+                                        <Table.Cell width={3} className={classNames(
+                                            {
+                                                'niepoprawne_dane': !pracownikOdczytany,
+                                                'odczytano_dane': this.state.wlasnieOdczytanoPracownika,
+                                    })}>
                                             {pracownikOdczytany ? raportujLaser.getEmployeeFulname() : 'Brak'}
-                                    </Table.Cell>
+                                        </Table.Cell>
                                     </Table.Row>
                                 <Table.Row key='program'>
                                         <Table.Cell width={1}>
                                         Program
                                     </Table.Cell>
-                                        <Table.Cell width={3} className={programOdczytany ? '' : 'niepoprawne_dane'}>
+                                        <Table.Cell width={3} className={
+                                            programOdczytany ? '' : 'niepoprawne_dane'}>
                                             {programOdczytany ?
                                                 <Program raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
                                             :
@@ -146,7 +212,7 @@ class RaportowanieForm extends Component {
                                                 'brak'}
                                         </Table.Cell>
                                     </Table.Row>
-                                    <Table.Row key='liczba_powtorzen' disabled>
+                                    {/* <Table.Row key='liczba_powtorzen' disabled>
                                         <Table.Cell width={1}>
                                         Liczba powtórzeń
                                     </Table.Cell>
@@ -161,20 +227,20 @@ class RaportowanieForm extends Component {
                                                 Raportuj produkcję
                             </Button>
                                     </Table.Cell>
+                                </Table.Row> */}
+                                <Table.Row key='prace'>
+                                    <Table.Cell width={1}>
+                                        Trwające prace
+                                    </Table.Cell>
+                                    <Table.Cell width={3}>
+                                        {pracownikOdczytany
+                                            ?
+                                            <TrwajacePrace raportujLaser={raportujLaser}
+                                                handlePrzerwijPrace={this.handlePrzerwijPrace}
+                                                handleZakonczPrace={this.handleZakonczPrace} />
+                                            : ''}
+                                    </Table.Cell>
                                 </Table.Row>
-                                    <Table.Row key='prace'>
-                                        <Table.Cell width={1}>
-                                            Trwające prace
-                                    </Table.Cell>
-                                        <Table.Cell width={3} className={programOdczytany ? '' : 'niepoprawne_dane'}>
-                                            {pracownikOdczytany
-                                                ?
-                                                <TrwajacePrace raportujLaser={raportujLaser}
-                                                    handlePrzerwijPrace={this.handlePrzerwijPrace}
-                                                    handleZakonczPrace={this.handleZakonczPrace} />
-                                                : ''}
-                                    </Table.Cell>
-                                    </Table.Row>
                             </Table.Body>
                         </Table>
                         </Segment>
@@ -185,6 +251,11 @@ class RaportowanieForm extends Component {
     }
 }
 
+const ToastMessage = (props) => (
+    <div>
+        {props.message || ''}
+    </div>
+)   
 class Program extends Component {
     constructor(props) {
         super(props);

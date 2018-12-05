@@ -1,38 +1,26 @@
-class RaportujLaser {
-    constructor() {
-        this.scanInput = ''
-        this.liczba_powtorzen = 2
-        this.employeeId = -1
-        this.employee = {}
-        this.kartaProgramu = {}
-        this.pracePracownika = []
-        this.detaleProgramu = []
+
+
+class DataProvider {
+
+    static testKonfiguracji = (promiseHandler) => {
+        fetch('/eoffice/production/raportowanie_produkcji_lasera/raportowanie_produkcji_lasera_json_endpoint.xml?action=test_konfiguracji')
+            .then(response => {
+                if (!response.ok) {
+                    return Promise.reject();
+                }
+                return response.json()
+            })
+            .then(json => {
+                if (json.is_request_successful === false) {
+                    return Promise.reject(json.error_message)
+                }
+                const fromServer = json
+                promiseHandler(fromServer)
+            })
     }
 
-    setter = (changes) => {
-        Object.keys(changes).forEach(key => {
-            console.log('RaportujLaser.setter(' + key + ', ' + changes[key] + ')')
-
-            this[key] = changes[key]
-            //koszt.onFieldChange(key, changes[key]))
-        })
-        return this
-    }
-
-    getEmployeeFulname = () => {
-        return this.employee.surname ? this.employee.surname + ' ' + this.employee.name : ''
-    }
-
-    isPracownikOdczytany = () => {
-        return this.employee.id
-    }
-
-    isProgramOdczytany = () => {
-        return this.kartaProgramu.idProgramu
-    }
-
-    wyslijNaSerwer = (additionalFields, promiseHandler) => {
-        const doWyslania = Object.assign({ ...this }, { ...additionalFields })
+    static wyslijSkanNaSerwer = (raportujLaser, additionalFields, promiseHandler, errorHandler) => {
+        const doWyslania = Object.assign({ ...raportujLaser }, { ...additionalFields })
         delete doWyslania.employee
         delete doWyslania.kartaProgramu
         const doWyslaniaJson = JSON.stringify(doWyslania)
@@ -51,6 +39,9 @@ class RaportujLaser {
                 return response.json()
             })
             .then(json => {
+                if (json.is_request_successful === false) {
+                    return Promise.reject(json.error_message)
+                }
                 const fromServer = json
                 //console.log('RaportujLaser.wyslijNaSerwer fromServer', fromServer)
                 //if (fromServer.employee)
@@ -59,11 +50,14 @@ class RaportujLaser {
                 this.idProgramu = fromServer.kartaProgramu ? fromServer.kartaProgramu.idProgramu : ''
                 this.kartaProgramu = fromServer.kartaProgramu
                 this.pracePracownika = fromServer.pracePracownika
+                this.wlasnieOdczytano = fromServer.wlasnieOdczytano
                 this.serverInfo = fromServer.serverInfo
 
-                promiseHandler(this)
+                promiseHandler(fromServer)
             })
+            .catch(error => errorHandler(error))
     }
+
 }
 
-export default RaportujLaser
+export default DataProvider
