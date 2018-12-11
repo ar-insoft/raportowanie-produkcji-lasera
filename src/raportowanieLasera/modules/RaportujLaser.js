@@ -31,10 +31,12 @@ class RaportujLaser {
         return this.kartaProgramu.idProgramu
     }
 
-    wyslijNaSerwer = (additionalFields, promiseHandler) => {
+    wyslijNaSerwer = (additionalFields, promiseHandler, errorHandler) => {
         const doWyslania = Object.assign({ ...this }, { ...additionalFields })
         delete doWyslania.employee
         delete doWyslania.kartaProgramu
+        delete doWyslania.pracePracownika
+        delete doWyslania.serverInfo
         const doWyslaniaJson = JSON.stringify(doWyslania)
 
         fetch('/eoffice/production/raportowanie_produkcji_lasera/raportowanie_produkcji_lasera_json_endpoint.xml?action=analizuj_skan_kodu', {
@@ -51,18 +53,24 @@ class RaportujLaser {
                 return response.json()
             })
             .then(json => {
+                if (json.is_request_successful === false) {
+                    return Promise.reject(json.error_message)
+                }
                 const fromServer = json
                 //console.log('RaportujLaser.wyslijNaSerwer fromServer', fromServer)
-                //if (fromServer.employee)
-                this.employee = fromServer.employee
-                this.idEmployee = fromServer.employee ? fromServer.employee.id : ''
-                this.idProgramu = fromServer.kartaProgramu ? fromServer.kartaProgramu.idProgramu : ''
-                this.kartaProgramu = fromServer.kartaProgramu
-                this.pracePracownika = fromServer.pracePracownika
-                this.serverInfo = fromServer.serverInfo
+                fromServer.idEmployee = fromServer.employee ? fromServer.employee.id : ''
+                fromServer.idProgramu = fromServer.kartaProgramu ? fromServer.kartaProgramu.idProgramu : ''
 
-                promiseHandler(this)
+                // this.employee = fromServer.employee
+                // this.idEmployee = fromServer.employee ? fromServer.employee.id : ''
+                // this.idProgramu = fromServer.kartaProgramu ? fromServer.kartaProgramu.idProgramu : ''
+                // this.kartaProgramu = fromServer.kartaProgramu
+                // this.pracePracownika = fromServer.pracePracownika
+                // this.serverInfo = fromServer.serverInfo
+
+                promiseHandler(fromServer)
             })
+            .catch(error => errorHandler(error))
     }
 }
 

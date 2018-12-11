@@ -53,11 +53,11 @@ class RaportowanieForm extends Component {
     }
 
     handleScan = () => {
-        this.setState({ isLoading: true })
+        this.rozpocznijLaczenieZSerwerem()
         this.state.raportujLaser.wyslijNaSerwer({},
-            raportujLaser => {
-                this.setState({ raportujLaser: raportujLaser, isLoading: false })
-                if (raportujLaser.wlasnieOdczytano === 'pracownik') {
+            fromServer => {
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
+                if (fromServer.wlasnieOdczytano === 'pracownik') {
                     this.setState({ wlasnieOdczytanoPracownika: true })
                     afterSecondsOf(3).subscribe(x => this.setState({ wlasnieOdczytanoPracownika: false }))
                 }
@@ -106,7 +106,14 @@ class RaportowanieForm extends Component {
     }
 
     handleZakonczPrace = (idPraceLaser) => {
-        this.state.raportujLaser.wyslijNaSerwer({ zakoncz_prace: idPraceLaser }, raportujLaser => this.setState({ raportujLaser: raportujLaser }))
+        this.rozpocznijLaczenieZSerwerem()
+        this.state.raportujLaser.wyslijNaSerwer({ zakoncz_prace: idPraceLaser },
+            fromServer => {
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
+            }, error => {
+                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                this.setState({ isLoading: false });
+            })
     }
 
     handleRaport = () => {
@@ -156,24 +163,7 @@ class RaportowanieForm extends Component {
                                     <InformacjeZSerwera raportujLaser={this.state.raportujLaser} />
                             </div>
                         </Segment>
-                        <Segment>
-                            <Button icon onClick={(evt) => this.setScan(90065202)} type='button'>
-                                <Icon name='external' />
-                                Tomasz Tarka
-                            </Button>
-                            <Button icon onClick={(evt) => this.setScan('171121_2_304L_1')} type='button'>
-                                <Icon name='external' />
-                                171121_2_304L_1
-                            </Button>
-                            <Button icon onClick={(evt) => this.setScan('180517_2_304L_4')} type='button'>
-                                <Icon name='external' />
-                                180517_2_304L_4
-                            </Button>
-                            <Button icon onClick={(evt) => { this.setScan('2_1'); this.handleScan() }} type='button'>
-                                <Icon name='external' />
-                                2_1
-                            </Button>
-                        </Segment>
+                        <AkcjeTestowe parent={this} visible={this.state.raportujLaser.SerwerDewepolerski}/>
                         <Segment>
                         <Table celled striped>
                             <Table.Body>
@@ -190,10 +180,10 @@ class RaportowanieForm extends Component {
                                         </Table.Cell>
                                     </Table.Row>
                                 <Table.Row key='program'>
-                                        <Table.Cell width={1}>
+                                        <Table.Cell>
                                         Program
                                     </Table.Cell>
-                                        <Table.Cell width={3} className={
+                                        <Table.Cell className={
                                             programOdczytany ? '' : 'niepoprawne_dane'}>
                                             {programOdczytany ?
                                                 <Program raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
@@ -202,10 +192,10 @@ class RaportowanieForm extends Component {
                                     </Table.Cell>
                                 </Table.Row>
                                     <Table.Row key='detaleProgramu'>
-                                        <Table.Cell width={1}>
+                                        <Table.Cell>
                                             Detale programu
                                     </Table.Cell>
-                                        <Table.Cell width={3} className={programOdczytany ? '' : 'niepoprawne_dane'}>
+                                        <Table.Cell className={programOdczytany ? '' : 'niepoprawne_dane'}>
                                             {programOdczytany ?
                                                 <DetaleForm raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
                                                 :
@@ -213,10 +203,10 @@ class RaportowanieForm extends Component {
                                         </Table.Cell>
                                     </Table.Row>
                                     {/* <Table.Row key='liczba_powtorzen' disabled>
-                                        <Table.Cell width={1}>
+                                        <Table.Cell>
                                         Liczba powtórzeń
                                     </Table.Cell>
-                                        <Table.Cell width={3} className={programOdczytany ? '' : 'niepoprawne_dane'}>
+                                        <Table.Cell className={programOdczytany ? '' : 'niepoprawne_dane'}>
                                             <Input id='form-input-liczba_powtorzen' ref={this.textInput_liczba_powtorzen}
                                             name="liczba_powtorzen" value={liczba_powtorzen} onChange={this.handleChange}
                                             />
@@ -229,10 +219,10 @@ class RaportowanieForm extends Component {
                                     </Table.Cell>
                                 </Table.Row> */}
                                 <Table.Row key='prace'>
-                                    <Table.Cell width={1}>
+                                    <Table.Cell>
                                         Trwające prace
                                     </Table.Cell>
-                                    <Table.Cell width={3}>
+                                    <Table.Cell>
                                         {pracownikOdczytany
                                             ?
                                             <TrwajacePrace raportujLaser={raportujLaser}
@@ -255,7 +245,33 @@ const ToastMessage = (props) => (
     <div>
         {props.message || ''}
     </div>
-)   
+)
+
+const AkcjeTestowe = (props) => {
+    const { parent, visible } = props
+    if (visible) return (
+        <Segment >
+            <Button icon onClick={(evt) => { parent.setScan(90065202); parent.handleScan() }} type='button'>
+                <Icon name='external' />
+                Tomasz Tarka
+                            </Button>
+            <Button icon onClick={(evt) => { parent.setScan('171121_2_304L_1'); parent.handleScan() }} type='button'>
+                <Icon name='external' />
+                171121_2_304L_1
+                            </Button>
+            <Button icon onClick={(evt) => { parent.setScan('180517_2_304L_4'); parent.handleScan() }} type='button'>
+                <Icon name='external' />
+                180517_2_304L_4
+                            </Button>
+            <Button icon onClick={(evt) => { parent.setScan('2_1'); parent.handleScan() }} type='button'>
+                <Icon name='external' />
+                2_1
+                            </Button>
+        </Segment>
+    )
+    return null
+}
+
 class Program extends Component {
     constructor(props) {
         super(props);
@@ -330,7 +346,6 @@ const TrwajacePrace = (props) => {
                                 Przerwij pracę
                             </Button>
                             <Button type='button' icon onClick={(evt) => handleZakonczPrace(praca.id)}
-                                disabled={true}
                             >
                                 <Icon name='send' />
                                 Zakończ pracę

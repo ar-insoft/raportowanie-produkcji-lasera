@@ -5,7 +5,7 @@ const InformacjeZSerwera = (props) => {
     const { raportujLaser } = props
     const error = raportujLaser.serverInfo && raportujLaser.serverInfo.error
     const ok = raportujLaser.serverInfo && raportujLaser.serverInfo.ok
-    console.log('InformacjeZSerwera: ' + (raportujLaser.serverInfo && (raportujLaser.serverInfo.error || raportujLaser.serverInfo.ok)))
+    //console.log('InformacjeZSerwera: ' + (raportujLaser.serverInfo && (raportujLaser.serverInfo.error || raportujLaser.serverInfo.ok)))
 
     // if (raportujLaser.wlasnieOdczytano === 'pracownik') {
     //     return (
