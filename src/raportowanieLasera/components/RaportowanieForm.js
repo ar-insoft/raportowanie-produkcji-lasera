@@ -179,6 +179,19 @@ class RaportowanieForm extends Component {
                                             {pracownikOdczytany ? raportujLaser.getEmployeeFulname() : 'Brak'}
                                         </Table.Cell>
                                     </Table.Row>
+                                    <Table.Row key='prace'>
+                                        <Table.Cell>
+                                            Trwające prace
+                                    </Table.Cell>
+                                        <Table.Cell>
+                                            {pracownikOdczytany
+                                                ?
+                                                <TrwajacePrace raportujLaser={raportujLaser}
+                                                    handlePrzerwijPrace={this.handlePrzerwijPrace}
+                                                    handleZakonczPrace={this.handleZakonczPrace} />
+                                                : ''}
+                                        </Table.Cell>
+                                    </Table.Row>
                                 <Table.Row key='program'>
                                         <Table.Cell>
                                         Program
@@ -218,19 +231,6 @@ class RaportowanieForm extends Component {
                             </Button>
                                     </Table.Cell>
                                 </Table.Row> */}
-                                <Table.Row key='prace'>
-                                    <Table.Cell>
-                                        Trwające prace
-                                    </Table.Cell>
-                                    <Table.Cell>
-                                        {pracownikOdczytany
-                                            ?
-                                            <TrwajacePrace raportujLaser={raportujLaser}
-                                                handlePrzerwijPrace={this.handlePrzerwijPrace}
-                                                handleZakonczPrace={this.handleZakonczPrace} />
-                                            : ''}
-                                    </Table.Cell>
-                                </Table.Row>
                             </Table.Body>
                         </Table>
                         </Segment>

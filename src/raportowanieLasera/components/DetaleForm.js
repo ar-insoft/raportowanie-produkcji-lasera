@@ -77,7 +77,7 @@ class DetaleForm extends Component {
                                                 'niepoprawne_dane': !detal.poprawnyDoRaportowania, //detal.bladWyznaczaniaIndeksuKomponentu
                                             })}>
                                         {detal.operacjaProedimsInfo}
-                                        <DetalAdditionalInfo visible={!detal.poprawnyDoRaportowania} error={!detal.idOperacjaProedims ? 'Brak operacji' : 'Operacja niepoprawna'} />
+                                        <DetalAdditionalInfo visible={!detal.poprawnyDoRaportowania} error={!detal.idOperacjaProedims ? 'Brak operacji' : 'Operacja zakończona'} />
                                     </Table.Cell>
                                     <Table.Cell textAlign='center' className={classNames(
                                         {
