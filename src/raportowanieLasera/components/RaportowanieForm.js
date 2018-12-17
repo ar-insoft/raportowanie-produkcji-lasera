@@ -251,9 +251,13 @@ const AkcjeTestowe = (props) => {
     const { parent, visible } = props
     if (visible) return (
         <Segment >
-            <Button icon onClick={(evt) => { parent.setScan(90065202); parent.handleScan() }} type='button'>
+            <Button icon onClick={(evt) => { parent.setScan(90065200); parent.handleScan() }} type='button'>
                 <Icon name='external' />
-                Tomasz Tarka
+                Mariusz Kozłowski
+                            </Button>
+            <Button icon onClick={(evt) => { parent.setScan(90065201); parent.handleScan() }} type='button'>
+                <Icon name='external' />
+                Łukasz Silwanowicz
                             </Button>
             <Button icon onClick={(evt) => { parent.setScan('171121_2_304L_1'); parent.handleScan() }} type='button'>
                 <Icon name='external' />
