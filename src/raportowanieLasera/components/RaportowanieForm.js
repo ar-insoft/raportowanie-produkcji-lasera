@@ -8,7 +8,7 @@ import RaportujLaser from '../modules/RaportujLaser'
 import DataProvider from '../modules/DataProvider'
 import DetaleForm from './DetaleForm'
 import InformacjeZSerwera from './InformacjeZSerwera'
-import { afterSecondsOf } from '../modules/Timers'
+import { afterSecondsOf, countDownSecondsOnTickOnComplete } from '../modules/Timers'
 
 class RaportowanieForm extends Component {
     constructor(props) {
@@ -18,9 +18,12 @@ class RaportowanieForm extends Component {
             isLoading: false,
             raportujLaser: new RaportujLaser(),
             wlasnieOdczytanoPracownika: false,
+            odswiezenieStronyZa: 0,
+            odswiezenieStronySubscription: null
         }
 
-        this.textInput_liczba_powtorzen = React.createRef()
+        this.textInput_liczba_powtorzen = React.createRef();
+        this.scanInputRef = React.createRef();
     }
 
     componentDidUpdate(prevProps, prevState, snapshot) {
@@ -29,16 +32,16 @@ class RaportowanieForm extends Component {
         DataProvider.testKonfiguracji(fromServer => {
             console.log('RaportowanieForm.componentDidMount', !fromServer.konfiguracja_poprawna, fromServer)
             if (!fromServer.konfiguracja_poprawna) {
-                this.state.raportujLaser.serverInfo = { error: fromServer.bledy_konfiguracji }
-                console.log('RaportowanieForm.componentDidMount', this.state.raportujLaser.serverInfo)
-                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), })
+                //this.state.raportujLaser.serverInfo = { error: fromServer.bledy_konfiguracji }
+                //console.log('RaportowanieForm.componentDidMount', this.state.raportujLaser.serverInfo)
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer) })
             }
         })
     }
 
     handleChange = (e) => {
         const { name, value } = e.target;
-        console.log('RaportowanieForm.handleChange ('+name+', '+value+')')
+        console.log('RaportowanieForm.handleChange (' + name + ', ' + value + ')')
         this.setState({ raportujLaser: this.state.raportujLaser.setter({ [name]: value }) });
     }
 
@@ -49,7 +52,8 @@ class RaportowanieForm extends Component {
     }
 
     rozpocznijLaczenieZSerwerem = () => {
-        this.setState({ isLoading: true, raportujLaser: Object.assign(this.state.raportujLaser, { serverInfo: {}}) })
+        this.zatrzymajLicznikOdswiezeniaStrony();
+        this.setState({ isLoading: true, raportujLaser: Object.assign(this.state.raportujLaser, { serverInfo: {} }) })
     }
 
     handleScan = () => {
@@ -57,13 +61,21 @@ class RaportowanieForm extends Component {
         this.state.raportujLaser.wyslijNaSerwer({},
             fromServer => {
                 this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
-                if (fromServer.wlasnieOdczytano === 'pracownik') {
-                    this.setState({ wlasnieOdczytanoPracownika: true })
-                    afterSecondsOf(3).subscribe(x => this.setState({ wlasnieOdczytanoPracownika: false }))
+
+                if (fromServer.serverInfo && fromServer.serverInfo.error === 'Nie znaleziono pracownika lub programu') {
+                    this.wyswietlLicznikIOdswiezStroneZa(4);
+                }
+                else {
+                    if (fromServer.wlasnieOdczytano === 'pracownik') {
+                        this.setState({ wlasnieOdczytanoPracownika: true })
+                        afterSecondsOf(3).subscribe(x => this.setState({ wlasnieOdczytanoPracownika: false }))
+                    }
+                    this.wyswietlLicznikIOdswiezStroneZa(30);
+                    this.resetujPoleTekstoweSkanowania();
+                    this.focusPoleTekstoweSkanowania();
                 }
             }, error => {
-                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
-                this.setState({ isLoading: false });
+                toast.error(<span>Błąd: {error}</span>);
             })
     }
     handleScan3 = () => {
@@ -76,42 +88,51 @@ class RaportowanieForm extends Component {
                     afterSecondsOf(3).subscribe(x => this.setState({ wlasnieOdczytanoPracownika: false }))
                 }
             }, error => {
-                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                toast.error(<span>Błąd: {error}</span>);
                 this.setState({ isLoading: false });
             })
-    }    
+    }
 
     handleRozpocznijPrace = () => {
         this.rozpocznijLaczenieZSerwerem()
-        this.state.raportujLaser.scanInput = ''
+        this.resetujPoleTekstoweSkanowania();
+        this.focusPoleTekstoweSkanowania();
+
         this.state.raportujLaser.wyslijNaSerwer(
             { rozpocznij_prace: 1 },
             fromServer => {
-                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false });
+                this.wyswietlLicznikIOdswiezStroneZa(30);
             }, error => {
-                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                toast.error(<span>Błąd: {error}</span>);
                 this.setState({ isLoading: false });
             })
     }
 
     handlePrzerwijPrace = (idPraceLaser) => {
-        this.rozpocznijLaczenieZSerwerem()
+        this.rozpocznijLaczenieZSerwerem();
+        this.focusPoleTekstoweSkanowania();
+
         this.state.raportujLaser.wyslijNaSerwer({ przerwij_prace: idPraceLaser },
             fromServer => {
-                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false });
+                this.wyswietlLicznikIOdswiezStroneZa(30);
             }, error => {
-                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                toast.error(<span>Błąd: {error}</span>);
                 this.setState({ isLoading: false });
             })
     }
 
     handleZakonczPrace = (idPraceLaser) => {
-        this.rozpocznijLaczenieZSerwerem()
+        this.rozpocznijLaczenieZSerwerem();
+        this.focusPoleTekstoweSkanowania();
+
         this.state.raportujLaser.wyslijNaSerwer({ zakoncz_prace: idPraceLaser },
             fromServer => {
-                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
+                this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false });
+                this.wyswietlLicznikIOdswiezStroneZa(30);
             }, error => {
-                toast.error(<ToastMessage message={<span><em>Błąd! {error}</em></span>} />)
+                toast.error(<span>Błąd: {error}</span>);
                 this.setState({ isLoading: false });
             })
     }
@@ -125,6 +146,34 @@ class RaportowanieForm extends Component {
         //this.textInput_liczba_powtorzen.current.focus()
     }
 
+    wyswietlLicznikIOdswiezStroneZa(poIluSekundach) {
+        this.zatrzymajLicznikOdswiezeniaStrony();
+
+        let subscription = countDownSecondsOnTickOnComplete(poIluSekundach,
+            s => this.setState({ odswiezenieStronyZa: s - 1 }),
+            () => {
+                this.setState({ raportujLaser: new RaportujLaser(), odswiezenieStronyZa: 0 })
+                this.focusPoleTekstoweSkanowania();
+            }
+        );
+        this.setState({ odswiezenieStronySubscription: subscription });
+    }
+
+    zatrzymajLicznikOdswiezeniaStrony() {
+        if (this.state.odswiezenieStronySubscription) {
+            this.state.odswiezenieStronySubscription.unsubscribe();
+            this.setState({ odswiezenieStronySubscription: null, odswiezenieStronyZa: 0 });
+        }
+    }
+
+    resetujPoleTekstoweSkanowania() {
+        this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, { scanInput: '' }) });
+    }
+
+    focusPoleTekstoweSkanowania() {
+        this.scanInputRef.current.focus();
+    }
+
     render() {
         const { raportujLaser } = this.state
         const { scanInput, liczba_powtorzen, employee, } = raportujLaser
@@ -135,47 +184,49 @@ class RaportowanieForm extends Component {
             <Container textAlign='center'>
                 <Form autoComplete="off" loading={this.state.isLoading}>
                     <Header as='h2'>Raportowanie produkcji lasera</Header>
-                    <Segment.Group>                        
+                    <Segment.Group>
                         <Segment compact>
                             <div style={{ display: 'flex' }}>
-                            <Item.Group>
-                                <Item className='scan'>
-                                    <Item.Image size='tiny' src={logo} />
+                                <Item.Group>
+                                    <Item className='scan'>
+                                        <Item.Image size='tiny' src={logo} />
 
-                                <Item.Content>
-                                        <Item.Header>Zeskanuj kod:</Item.Header>
-                                    {/* <Item.Meta>
+                                        <Item.Content>
+                                            <Item.Header>Zeskanuj kod:</Item.Header>
+                                            {/* <Item.Meta>
                                         <span className='price'>$1200</span>
                                         <span className='stay'>1 Month</span>
                                     </Item.Meta> */}
-                                        <Item.Description>
-                                            <Input id='form-input-scanInput' name="scanInput" value={scanInput} type='text' autoFocus
-                                                onChange={this.handleChange}
-                                                onKeyDown={this.handleKeyOnScan}
-                                            />
-                                            <Button icon onClick={(evt) => this.handleScan()} type='button'>
-                                                <Icon name='search' />
-                                            </Button>
-                                        </Item.Description>
-                                </Item.Content>
-                                </Item>
-                            </Item.Group>
-                                    <InformacjeZSerwera raportujLaser={this.state.raportujLaser} />
+                                            <Item.Description>
+                                                <Input id='form-input-scanInput' name="scanInput" value={scanInput} type='text'
+                                                    autoFocus ref={this.scanInputRef}
+                                                    onChange={this.handleChange}
+                                                    onKeyDown={this.handleKeyOnScan}
+                                                />
+                                                <Button icon onClick={(evt) => this.handleScan()} type='button'>
+                                                    <Icon name='search' />
+                                                </Button>
+                                            </Item.Description>
+                                            <OdswiezenieStronyZa sekund={this.state.odswiezenieStronyZa} />
+                                        </Item.Content>
+                                    </Item>
+                                </Item.Group>
+                                <InformacjeZSerwera raportujLaser={this.state.raportujLaser} />
                             </div>
                         </Segment>
-                        <AkcjeTestowe parent={this} visible={this.state.raportujLaser.SerwerDewepolerski}/>
+                        <AkcjeTestowe parent={this} visible={this.state.raportujLaser.SerwerDewepolerski} />
                         <Segment>
-                        <Table celled striped>
-                            <Table.Body>
-                                <Table.Row key='pracownik'>
-                                    <Table.Cell width={1}>
-                                        Pracownik
+                            <Table celled striped>
+                                <Table.Body>
+                                    <Table.Row key='pracownik'>
+                                        <Table.Cell width={1}>
+                                            Pracownik
                                     </Table.Cell>
                                         <Table.Cell width={3} className={classNames(
                                             {
                                                 'niepoprawne_dane': !pracownikOdczytany,
                                                 'odczytano_dane': this.state.wlasnieOdczytanoPracownika,
-                                    })}>
+                                            })}>
                                             {pracownikOdczytany ? raportujLaser.getEmployeeFulname() : 'Brak'}
                                         </Table.Cell>
                                     </Table.Row>
@@ -192,18 +243,18 @@ class RaportowanieForm extends Component {
                                                 : ''}
                                         </Table.Cell>
                                     </Table.Row>
-                                <Table.Row key='program'>
+                                    <Table.Row key='program'>
                                         <Table.Cell>
-                                        Program
+                                            Program
                                     </Table.Cell>
                                         <Table.Cell className={
                                             programOdczytany ? '' : 'niepoprawne_dane'}>
                                             {programOdczytany ?
                                                 <Program raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
-                                            :
+                                                :
                                                 'brak informacji o programie'}
-                                    </Table.Cell>
-                                </Table.Row>
+                                        </Table.Cell>
+                                    </Table.Row>
                                     <Table.Row key='detaleProgramu'>
                                         <Table.Cell>
                                             Detale programu
@@ -231,8 +282,8 @@ class RaportowanieForm extends Component {
                             </Button>
                                     </Table.Cell>
                                 </Table.Row> */}
-                            </Table.Body>
-                        </Table>
+                                </Table.Body>
+                            </Table>
                         </Segment>
                     </Segment.Group>
                 </Form>
@@ -240,12 +291,6 @@ class RaportowanieForm extends Component {
         )
     }
 }
-
-const ToastMessage = (props) => (
-    <div>
-        {props.message || ''}
-    </div>
-)
 
 const AkcjeTestowe = (props) => {
     const { parent, visible } = props
@@ -288,31 +333,31 @@ class Program extends Component {
         const programOdczytany = raportujLaser.isProgramOdczytany()
         return (
             <div>
-            <Segment.Group horizontal basic>
-                <Segment>
-                    <List>
-                        <List.Item>
-                            <List.Icon name='laptop' />
-                            <List.Content>Zlecenie: {kartaProgramu.nazwaZlecenia}</List.Content>
-                        </List.Item>
-                        <List.Item>
-                            <List.Icon name='industry' />
-                            <List.Content>Maszyna: {kartaProgramu.maszyna}</List.Content>
-                        </List.Item>
-                    </List>
-                </Segment>
-                <Segment>
-                    <Button type='button' icon onClick={(evt) => handleRozpocznijPrace()}
-                        disabled={!pracownikOdczytany || !programOdczytany}
-                    >
-                        <Icon name='send' />
-                        Rozpocznij pracę
+                <Segment.Group horizontal basic>
+                    <Segment>
+                        <List>
+                            <List.Item>
+                                <List.Icon name='laptop' />
+                                <List.Content>Zlecenie: {kartaProgramu.nazwaZlecenia}</List.Content>
+                            </List.Item>
+                            <List.Item>
+                                <List.Icon name='industry' />
+                                <List.Content>Maszyna: {kartaProgramu.maszyna}</List.Content>
+                            </List.Item>
+                        </List>
+                    </Segment>
+                    <Segment>
+                        <Button type='button' icon onClick={(evt) => handleRozpocznijPrace()}
+                            disabled={!pracownikOdczytany || !programOdczytany}
+                        >
+                            <Icon name='send' />
+                            Rozpocznij pracę
                             </Button>
 
-                </Segment>
-            </Segment.Group>
-        </div >
-    )
+                    </Segment>
+                </Segment.Group>
+            </div >
+        )
     }
 }
 
@@ -320,30 +365,30 @@ const TrwajacePrace = (props) => {
     const { raportujLaser, handlePrzerwijPrace, handleZakonczPrace } = props
     const { pracePracownika, employee, } = raportujLaser
     return (
-    <Table celled striped>
-        <Table.Header>
-            <Table.Row>
-                <Table.Cell>
-                    Program
-                </Table.Cell>
-                <Table.Cell>
-                    Rozpoczęcie
-                </Table.Cell>
-                <Table.Cell>
-                    Akcje
-                </Table.Cell>
-            </Table.Row>
-        </Table.Header>
-        <Table.Body>
-            {pracePracownika.map(praca => 
-                <Table.Row key={praca.id}>
+        <Table celled striped>
+            <Table.Header>
+                <Table.Row>
                     <Table.Cell>
-                        {praca.id_karta_programu}
-                    </Table.Cell>
+                        Program
+                </Table.Cell>
                     <Table.Cell>
+                        Rozpoczęcie
+                </Table.Cell>
+                    <Table.Cell>
+                        Akcje
+                </Table.Cell>
+                </Table.Row>
+            </Table.Header>
+            <Table.Body>
+                {pracePracownika.map(praca =>
+                    <Table.Row key={praca.id}>
+                        <Table.Cell>
+                            {praca.id_karta_programu}
+                        </Table.Cell>
+                        <Table.Cell>
                             {praca.work_start}
-                    </Table.Cell>
-                    <Table.Cell>
+                        </Table.Cell>
+                        <Table.Cell>
                             <Button type='button' icon onClick={(evt) => handlePrzerwijPrace(praca.id)}
                             >
                                 <Icon name='send' />
@@ -354,12 +399,18 @@ const TrwajacePrace = (props) => {
                                 <Icon name='send' />
                                 Zakończ pracę
                             </Button>
-                    </Table.Cell>
-                </Table.Row>
-            )}
-        </Table.Body>
+                        </Table.Cell>
+                    </Table.Row>
+                )}
+            </Table.Body>
         </Table>
     )
 }
+
+const OdswiezenieStronyZa = props => (
+    <React.Fragment>
+        {props.sekund > 0 && <span className='odswiezStroneZa'>Odświeżenie strony za {props.sekund}</span>}
+    </React.Fragment>
+);
 
 export default RaportowanieForm
