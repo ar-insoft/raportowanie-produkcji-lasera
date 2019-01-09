@@ -331,6 +331,7 @@ class Program extends Component {
         const { kartaProgramu, employee, } = raportujLaser
         const pracownikOdczytany = raportujLaser.isPracownikOdczytany()
         const programOdczytany = raportujLaser.isProgramOdczytany()
+        const czyPracownikPracujeJuzNadProgramem = raportujLaser.czyPracownikPracujeJuzNadProgramem(kartaProgramu.idProgramu)
         return (
             <div>
                 <Segment.Group horizontal basic>
@@ -348,7 +349,7 @@ class Program extends Component {
                     </Segment>
                     <Segment>
                         <Button type='button' icon onClick={(evt) => handleRozpocznijPrace()}
-                            disabled={!pracownikOdczytany || !programOdczytany}
+                            disabled={!pracownikOdczytany || !programOdczytany || czyPracownikPracujeJuzNadProgramem}
                         >
                             <Icon name='send' />
                             Rozpocznij pracę

@@ -31,6 +31,10 @@ class RaportujLaser {
         return this.kartaProgramu.idProgramu
     }
 
+    czyPracownikPracujeJuzNadProgramem = (id_karta_programu) => {
+        return this.pracePracownika.some(praca => praca.id_karta_programu === id_karta_programu)
+    }
+
     wyslijNaSerwer = (additionalFields, promiseHandler, errorHandler) => {
         const doWyslania = Object.assign({ ...this }, { ...additionalFields })
         delete doWyslania.employee
