@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Form, Input, Button, Table, Container, List, Header, Label, Icon, Segment, Item } from 'semantic-ui-react'
+import { Form, Input, Button, Table, Container, List, Header, Confirm, Icon, Segment, Item } from 'semantic-ui-react'
 import { toast } from 'react-toastify'
 import classNames from 'classnames/bind'
 import logo from '../../bar-code.png';
@@ -9,6 +9,8 @@ import DataProvider from '../modules/DataProvider'
 import DetaleForm from './DetaleForm'
 import InformacjeZSerwera from './InformacjeZSerwera'
 import { afterSecondsOf, countDownSecondsOnTickOnComplete } from '../modules/Timers'
+import ConfirmButton from './ConfirmButton'
+//import InnerState from '../../tools/InnerState'
 
 class RaportowanieForm extends Component {
     constructor(props) {
@@ -30,7 +32,7 @@ class RaportowanieForm extends Component {
     }
     componentDidMount() {
         DataProvider.testKonfiguracji(fromServer => {
-            console.log('RaportowanieForm.componentDidMount', !fromServer.konfiguracja_poprawna, fromServer)
+            //console.log('RaportowanieForm.componentDidMount', !fromServer.konfiguracja_poprawna, fromServer)
             if (!fromServer.konfiguracja_poprawna) {
                 //this.state.raportujLaser.serverInfo = { error: fromServer.bledy_konfiguracji }
                 //console.log('RaportowanieForm.componentDidMount', this.state.raportujLaser.serverInfo)
@@ -41,7 +43,7 @@ class RaportowanieForm extends Component {
 
     handleChange = (e) => {
         const { name, value } = e.target;
-        console.log('RaportowanieForm.handleChange (' + name + ', ' + value + ')')
+        //console.log('RaportowanieForm.handleChange (' + name + ', ' + value + ')')
         this.setState({ raportujLaser: this.state.raportujLaser.setter({ [name]: value }) });
     }
 
@@ -76,6 +78,7 @@ class RaportowanieForm extends Component {
                 }
             }, error => {
                 toast.error(<span>Błąd: {error}</span>);
+                this.setState({ isLoading: false })
             })
     }
     handleScan3 = () => {
@@ -179,7 +182,7 @@ class RaportowanieForm extends Component {
         const { scanInput, liczba_powtorzen, employee, } = raportujLaser
         const pracownikOdczytany = raportujLaser.isPracownikOdczytany()
         const programOdczytany = raportujLaser.isProgramOdczytany()
-        console.log('programOdczytany ' + programOdczytany)
+        //console.log('programOdczytany ' + programOdczytany)
         return (
             <Container textAlign='center'>
                 <Form autoComplete="off" loading={this.state.isLoading}>
@@ -284,6 +287,9 @@ class RaportowanieForm extends Component {
                                 </Table.Row> */}
                                 </Table.Body>
                             </Table>
+                            <a href="/eoffice/production/raportowanie_produkcji_lasera/lista_prac_laser.xml?action=list&raportowanie_produkcji=true">
+                                Lista prac lasera
+                            </a>
                         </Segment>
                     </Segment.Group>
                 </Form>
@@ -324,14 +330,30 @@ const AkcjeTestowe = (props) => {
 class Program extends Component {
     constructor(props) {
         super(props);
+        this.state = {
+            showConfirmRozpocznijPrace: false,
+        }
     }
-
+    handleButtonRozpocznijPrace = () => {
+        const { raportujLaser, handleRozpocznijPrace } = this.props
+        if (raportujLaser.czyPracownikMaRozpoczetePrace()) {
+            this.setState({ showConfirmRozpocznijPrace: true })
+        } else {
+            handleRozpocznijPrace()
+        }
+    }
+    handleConfirmRozpocznijPrace = () => {
+        this.setState({ showConfirmRozpocznijPrace: false })
+        this.props.handleRozpocznijPrace()
+    }
     render() {
         const { raportujLaser, handleRozpocznijPrace } = this.props
         const { kartaProgramu, employee, } = raportujLaser
         const pracownikOdczytany = raportujLaser.isPracownikOdczytany()
         const programOdczytany = raportujLaser.isProgramOdczytany()
         const czyPracownikPracujeJuzNadProgramem = raportujLaser.czyPracownikPracujeJuzNadProgramem(kartaProgramu.idProgramu)
+        const pracownik = raportujLaser.getEmployeeFulname()
+        const confirmContent = `Pracownik ${pracownik}, ma już rozpoczęte i niezakończone raportowanie prac. Czy rozpocząć nowe raportowanie?`
         return (
             <div>
                 <Segment.Group horizontal basic>
@@ -348,13 +370,20 @@ class Program extends Component {
                         </List>
                     </Segment>
                     <Segment>
-                        <Button type='button' icon onClick={(evt) => handleRozpocznijPrace()}
+                        <Button type='button' icon onClick={(evt) => this.handleButtonRozpocznijPrace()}
                             disabled={!pracownikOdczytany || !programOdczytany || czyPracownikPracujeJuzNadProgramem}
                         >
                             <Icon name='send' />
                             Rozpocznij pracę
-                            </Button>
-
+                        </Button>
+                        <Confirm dimmer='inverted'
+                            open={this.state.showConfirmRozpocznijPrace}
+                            content={confirmContent}
+                            cancelButton='Anuluj'
+                            confirmButton="Rozpocznij pracę"
+                            onCancel={(evt) => this.setState({ showConfirmRozpocznijPrace: false })}
+                            onConfirm={this.handleConfirmRozpocznijPrace}
+                        />
                     </Segment>
                 </Segment.Group>
             </div >
@@ -364,7 +393,8 @@ class Program extends Component {
 
 const TrwajacePrace = (props) => {
     const { raportujLaser, handlePrzerwijPrace, handleZakonczPrace } = props
-    const { pracePracownika, employee, } = raportujLaser
+    const { pracePracownika, } = raportujLaser
+
     return (
         <Table celled striped>
             <Table.Header>
@@ -390,16 +420,40 @@ const TrwajacePrace = (props) => {
                             {praca.work_start}
                         </Table.Cell>
                         <Table.Cell>
-                            <Button type='button' icon onClick={(evt) => handlePrzerwijPrace(praca.id)}
-                            >
-                                <Icon name='send' />
-                                Przerwij pracę
-                            </Button>
-                            <Button type='button' icon onClick={(evt) => handleZakonczPrace(praca.id)}
-                            >
-                                <Icon name='send' />
-                                Zakończ pracę
-                            </Button>
+                            <ConfirmButton onClick={(evt) => handlePrzerwijPrace(praca.id)}
+                                content="Przerwij pracę"
+                                useConfirm={praca.czyProgramNiedawnoRozpoczety == true}
+                                confirmContent="Program został niedawno rozpoczęty. Czy na pewno chcesz go przerwać?"
+                                cancelButton='Anuluj'
+                                confirmButton="Przerwij pracę"
+                            />
+                            {/* <ConfirmButton onClick={(evt) => handleZakonczPrace(praca.id)}
+                                disabled={praca.trwajaInnePrace} content="Zakończ pracę"
+                                useConfirm={true}
+                                confirmContent="Program został niedawno rozpoczęty. Czy na pewno chcesz go zakończyć?"
+                                cancelButton='Anuluj'
+                                confirmButton="Zakończ pracę"
+                            /> */}
+                            {/* <InnerState state={{ showConfirm: false, }}
+                                render={(innerState, setInnerState) => (
+                                    <React.Fragment>
+                                        <Button type='button' icon onClick={(evt) => setInnerState({ showConfirm: true })}
+                                            disabled={praca.trwajaInnePrace}
+                                        >
+                                            <Icon name='send' />
+                                            Zakończ pracę innerState
+                                        </Button>
+                                        <Confirm dimmer='inverted'
+                                            open={innerState.showConfirm}
+                                            content="Program został niedawno rozpoczęty. Czy na pewno chcesz go zakończyć?"
+                                            cancelButton='Anuluj'
+                                            confirmButton="Zakończ pracę"
+                                            onCancel={(evt) => setInnerState({ showConfirm: false })}
+                                            onConfirm={(evt) => handleZakonczPrace(praca.id)}
+                                        />
+                                    </React.Fragment>
+                                )}
+                            /> */}
                         </Table.Cell>
                     </Table.Row>
                 )}

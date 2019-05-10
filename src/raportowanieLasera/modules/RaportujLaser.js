@@ -31,6 +31,10 @@ class RaportujLaser {
         return this.kartaProgramu.idProgramu
     }
 
+    czyPracownikMaRozpoczetePrace = () => {
+        return this.pracePracownika.length > 0
+    }
+
     czyPracownikPracujeJuzNadProgramem = (id_karta_programu) => {
         return this.pracePracownika.some(praca => praca.id_karta_programu === id_karta_programu)
     }
@@ -64,12 +68,12 @@ class RaportujLaser {
                 //console.log('RaportujLaser.wyslijNaSerwer fromServer', fromServer)
                 fromServer.idEmployee = fromServer.employee ? fromServer.employee.id : ''
                 fromServer.idProgramu = fromServer.kartaProgramu ? fromServer.kartaProgramu.idProgramu : ''
+                this.pracePracownika = fromServer.pracePracownika
 
                 // this.employee = fromServer.employee
                 // this.idEmployee = fromServer.employee ? fromServer.employee.id : ''
                 // this.idProgramu = fromServer.kartaProgramu ? fromServer.kartaProgramu.idProgramu : ''
                 // this.kartaProgramu = fromServer.kartaProgramu
-                // this.pracePracownika = fromServer.pracePracownika
                 // this.serverInfo = fromServer.serverInfo
 
                 promiseHandler(fromServer)
