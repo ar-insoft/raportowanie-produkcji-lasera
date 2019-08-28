@@ -6,13 +6,13 @@
   "private": true,
   "dependencies": {
     "classnames": "^2.2.6",
-    "react": "^16.6.0",
-    "react-dom": "^16.6.0",
-    "react-scripts": "2.0.5",
-    "react-toastify": "^4.1.0",
-    "rxjs": "^6.3.3",
-    "semantic-ui-css": "2.2.14",
-    "semantic-ui-react": "^0.80.2"
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-scripts": "3.1.1",
+    "react-toastify": "^5.3.2",
+    "rxjs": "^6.5.2",
+    "semantic-ui-css": "2.4.1",
+    "semantic-ui-react": "^0.88.0"
   },
   "scripts": {
     "start": "react-scripts start",
