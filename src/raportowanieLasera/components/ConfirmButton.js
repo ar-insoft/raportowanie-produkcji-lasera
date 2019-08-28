@@ -27,7 +27,7 @@ class ConfirmButton extends Component {
                 >
                     <Icon name='send' />
                     {content}
-                        </Button>
+                </Button>
                 <Confirm dimmer='inverted'
                     open={this.state.showConfirm}
                     content={confirmContent}

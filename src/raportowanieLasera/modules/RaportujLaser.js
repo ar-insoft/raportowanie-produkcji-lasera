@@ -62,7 +62,10 @@ class RaportujLaser {
             })
             .then(json => {
                 if (json.is_request_successful === false) {
-                    return Promise.reject(json.error_message)
+                    const error_message = json.error_message
+                    const errorCause = json.cause
+                    this.errorCause = json.cause
+                    return Promise.reject({ error_message, errorCause })
                 }
                 const fromServer = json
                 //console.log('RaportujLaser.wyslijNaSerwer fromServer', fromServer)

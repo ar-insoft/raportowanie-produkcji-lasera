@@ -1,7 +1,8 @@
 import React, { Component } from 'react'
-import { Form, Input, Button, Table, Container, List, Header, Label, Icon, Segment, Item } from 'semantic-ui-react'
+import { Table, Icon } from 'semantic-ui-react'
 import classNames from 'classnames/bind'
 import _ from 'lodash'
+import { FormattedMessage } from 'react-intl'
 import './DetaleForm.css'
 
 class DetaleForm extends Component {
@@ -27,19 +28,19 @@ class DetaleForm extends Component {
                 <Table.Header>
                     <Table.Row>
                         <Table.HeaderCell textAlign='center'>
-                            Nr czesci
+                            <FormattedMessage id="Nr czesci" defaultMessage="Nr czesci" />
                         </Table.HeaderCell>
                         <Table.HeaderCell textAlign='center'>
-                            Zlecenie
+                            <FormattedMessage id="Zlecenie" defaultMessage="Zlecenie" />
                         </Table.HeaderCell>
                         <Table.HeaderCell textAlign='center'>
-                            Komponent
+                            <FormattedMessage id="Komponent" defaultMessage="Komponent" />
                         </Table.HeaderCell>
                         <Table.HeaderCell textAlign='center'>
-                            Operacja
+                            <FormattedMessage id="Operacja" defaultMessage="Operacja" />
                         </Table.HeaderCell>
                         <Table.HeaderCell textAlign='center'>
-                            Współczynnik czasu
+                            <FormattedMessage id="Współczynnik czasu" defaultMessage="Współczynnik czasu" />
                         </Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>

@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import { Form, Input, Button, Table, Container, List, Header, Confirm, Icon, Segment, Item } from 'semantic-ui-react'
 import { toast } from 'react-toastify'
 import classNames from 'classnames/bind'
+import { FormattedMessage } from 'react-intl'
 import logo from '../../bar-code.png';
 import './RaportowanieForm.css'
 import RaportujLaser from '../modules/RaportujLaser'
@@ -51,6 +52,7 @@ class RaportowanieForm extends Component {
         var char = event.which || event.keyCode;
         //console.log('handleKeyOnScan '+ char)
         if (char === 13) this.handleScan()
+        else this.wyswietlLicznikIOdswiezStroneZa(30);
     }
 
     rozpocznijLaczenieZSerwerem = () => {
@@ -64,6 +66,9 @@ class RaportowanieForm extends Component {
             fromServer => {
                 this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false })
 
+                if (fromServer.serverInfo && fromServer.serverInfo.cause) {
+                    toast.error(<span>Błąd: {fromServer.serverInfo.cause}</span>);
+                }
                 if (fromServer.serverInfo && fromServer.serverInfo.error === 'Nie znaleziono pracownika lub programu') {
                     this.wyswietlLicznikIOdswiezStroneZa(4);
                 }
@@ -77,7 +82,8 @@ class RaportowanieForm extends Component {
                     this.focusPoleTekstoweSkanowania();
                 }
             }, error => {
-                toast.error(<span>Błąd: {error}</span>);
+                toast.error(<span>Błąd: {error.error_message}</span>);
+                if (error.errorCause) toast.error(<span>Błąd: {error.errorCause}</span>);
                 this.setState({ isLoading: false })
             })
     }
@@ -152,14 +158,7 @@ class RaportowanieForm extends Component {
     wyswietlLicznikIOdswiezStroneZa(poIluSekundach) {
         this.zatrzymajLicznikOdswiezeniaStrony();
 
-        let subscription = countDownSecondsOnTickOnComplete(poIluSekundach,
-            s => this.setState({ odswiezenieStronyZa: s - 1 }),
-            () => {
-                this.setState({ raportujLaser: new RaportujLaser(), odswiezenieStronyZa: 0 })
-                this.focusPoleTekstoweSkanowania();
-            }
-        );
-        this.setState({ odswiezenieStronySubscription: subscription });
+        this.ustawLicznikOdswiezaniaStrony(poIluSekundach);
     }
 
     zatrzymajLicznikOdswiezeniaStrony() {
@@ -167,6 +166,14 @@ class RaportowanieForm extends Component {
             this.state.odswiezenieStronySubscription.unsubscribe();
             this.setState({ odswiezenieStronySubscription: null, odswiezenieStronyZa: 0 });
         }
+    }
+
+    ustawLicznikOdswiezaniaStrony(poIluSekundach) {
+        let subscription = countDownSecondsOnTickOnComplete(poIluSekundach, s => this.setState({ odswiezenieStronyZa: s - 1 }), () => {
+            this.setState({ raportujLaser: new RaportujLaser(), odswiezenieStronyZa: 0 });
+            this.focusPoleTekstoweSkanowania();
+        });
+        this.setState({ odswiezenieStronySubscription: subscription });
     }
 
     resetujPoleTekstoweSkanowania() {
@@ -186,7 +193,7 @@ class RaportowanieForm extends Component {
         return (
             <Container textAlign='center'>
                 <Form autoComplete="off" loading={this.state.isLoading}>
-                    <Header as='h2'>Raportowanie produkcji lasera</Header>
+                    <Header as='h2'><FormattedMessage id="Raportowanie produkcji lasera" defaultMessage="Raportowanie produkcji lasera" /></Header>
                     <Segment.Group>
                         <Segment compact>
                             <div style={{ display: 'flex' }}>
@@ -195,7 +202,7 @@ class RaportowanieForm extends Component {
                                         <Item.Image size='tiny' src={logo} />
 
                                         <Item.Content>
-                                            <Item.Header>Zeskanuj kod:</Item.Header>
+                                            <Item.Header><FormattedMessage id="Zeskanuj.kod" defaultMessage="Zeskanuj kod" />: </Item.Header>
                                             {/* <Item.Meta>
                                         <span className='price'>$1200</span>
                                         <span className='stay'>1 Month</span>
@@ -223,19 +230,19 @@ class RaportowanieForm extends Component {
                                 <Table.Body>
                                     <Table.Row key='pracownik'>
                                         <Table.Cell width={1}>
-                                            Pracownik
+                                            <FormattedMessage id="Pracownik" defaultMessage="Pracownik" />
                                     </Table.Cell>
                                         <Table.Cell width={3} className={classNames(
                                             {
                                                 'niepoprawne_dane': !pracownikOdczytany,
                                                 'odczytano_dane': this.state.wlasnieOdczytanoPracownika,
                                             })}>
-                                            {pracownikOdczytany ? raportujLaser.getEmployeeFulname() : 'Brak'}
+                                            {pracownikOdczytany ? raportujLaser.getEmployeeFulname() : <FormattedMessage id="brak" defaultMessage="brak" />}
                                         </Table.Cell>
                                     </Table.Row>
                                     <Table.Row key='prace'>
                                         <Table.Cell>
-                                            Trwające prace
+                                            <FormattedMessage id="Trwające prace" defaultMessage="Trwające prace" />
                                     </Table.Cell>
                                         <Table.Cell>
                                             {pracownikOdczytany
@@ -255,18 +262,18 @@ class RaportowanieForm extends Component {
                                             {programOdczytany ?
                                                 <Program raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
                                                 :
-                                                'brak informacji o programie'}
+                                                <FormattedMessage id="brak" defaultMessage="brak informacji o programie" />}
                                         </Table.Cell>
                                     </Table.Row>
                                     <Table.Row key='detaleProgramu'>
                                         <Table.Cell>
-                                            Detale programu
+                                            <FormattedMessage id="Detale programu" defaultMessage="Detale programu" />
                                     </Table.Cell>
                                         <Table.Cell className={programOdczytany ? '' : 'niepoprawne_dane'}>
                                             {programOdczytany ?
                                                 <DetaleForm raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
                                                 :
-                                                'brak'}
+                                                <FormattedMessage id="brak" defaultMessage="brak" />}
                                         </Table.Cell>
                                     </Table.Row>
                                     {/* <Table.Row key='liczba_powtorzen' disabled>
@@ -288,7 +295,7 @@ class RaportowanieForm extends Component {
                                 </Table.Body>
                             </Table>
                             <a href="/eoffice/production/raportowanie_produkcji_lasera/lista_prac_laser.xml?action=list&raportowanie_produkcji=true">
-                                Lista prac lasera
+                                <FormattedMessage id="Lista prac lasera" defaultMessage="Lista prac lasera" />
                             </a>
                         </Segment>
                     </Segment.Group>
@@ -361,7 +368,7 @@ class Program extends Component {
                         <List>
                             <List.Item>
                                 <List.Icon name='laptop' />
-                                <List.Content>Zlecenie: {kartaProgramu.nazwaZlecenia}</List.Content>
+                                <List.Content><FormattedMessage id="Zlecenie" defaultMessage="Zlecenie" />: {kartaProgramu.nazwaZlecenia}</List.Content>
                             </List.Item>
                             <List.Item>
                                 <List.Icon name='industry' />
@@ -374,7 +381,7 @@ class Program extends Component {
                             disabled={!pracownikOdczytany || !programOdczytany || czyPracownikPracujeJuzNadProgramem}
                         >
                             <Icon name='send' />
-                            Rozpocznij pracę
+                            <FormattedMessage id="Rozpocznij pracę" defaultMessage="Rozpocznij pracę" />
                         </Button>
                         <Confirm dimmer='inverted'
                             open={this.state.showConfirmRozpocznijPrace}
@@ -403,10 +410,10 @@ const TrwajacePrace = (props) => {
                         Program
                 </Table.Cell>
                     <Table.Cell>
-                        Rozpoczęcie
+                        <FormattedMessage id="Rozpoczęcie" defaultMessage="Rozpoczęcie" />
                 </Table.Cell>
                     <Table.Cell>
-                        Akcje
+                        <FormattedMessage id="Akcje" defaultMessage="Akcje" />
                 </Table.Cell>
                 </Table.Row>
             </Table.Header>
@@ -421,11 +428,11 @@ const TrwajacePrace = (props) => {
                         </Table.Cell>
                         <Table.Cell>
                             <ConfirmButton onClick={(evt) => handlePrzerwijPrace(praca.id)}
-                                content="Przerwij pracę"
+                                content={<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę" />}
                                 useConfirm={praca.czyProgramNiedawnoRozpoczety == true}
                                 confirmContent="Program został niedawno rozpoczęty. Czy na pewno chcesz go przerwać?"
-                                cancelButton='Anuluj'
-                                confirmButton="Przerwij pracę"
+                                cancelButton='Anuluj' //{<FormattedMessage id="Anuluj" defaultMessage="Anuluj" />}
+                                confirmButton='Przerwij pracę' //{<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę" />}
                             />
                             {/* <ConfirmButton onClick={(evt) => handleZakonczPrace(praca.id)}
                                 disabled={praca.trwajaInnePrace} content="Zakończ pracę"
@@ -464,7 +471,8 @@ const TrwajacePrace = (props) => {
 
 const OdswiezenieStronyZa = props => (
     <React.Fragment>
-        {props.sekund > 0 && <span className='odswiezStroneZa'>Odświeżenie strony za {props.sekund}</span>}
+        <span className='odswiezStroneZa'> </span>
+        {props.sekund > 0 && <span>Odświeżenie strony za {props.sekund}</span>}
     </React.Fragment>
 );
 

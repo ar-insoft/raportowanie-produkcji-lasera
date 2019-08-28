@@ -12,7 +12,8 @@
     "react-toastify": "^5.3.2",
     "rxjs": "^6.5.2",
     "semantic-ui-css": "2.4.1",
-    "semantic-ui-react": "^0.88.0"
+    "semantic-ui-react": "^0.88.0",
+    "react-intl": "^2.9.0"
   },
   "scripts": {
     "start": "react-scripts start",
