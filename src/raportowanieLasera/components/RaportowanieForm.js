@@ -118,11 +118,11 @@ class RaportowanieForm extends Component {
             })
     }
 
-    handlePrzerwijPrace = (idPraceLaser) => {
+    handlePrzerwijPrace = (idPraceLaser, stanowisko) => {
         this.rozpocznijLaczenieZSerwerem();
         this.focusPoleTekstoweSkanowania();
 
-        this.state.raportujLaser.wyslijNaSerwer({ przerwij_prace: idPraceLaser },
+        this.state.raportujLaser.wyslijNaSerwer({ przerwij_prace: idPraceLaser, stanowisko: stanowisko },
             fromServer => {
                 this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer), isLoading: false });
                 this.wyswietlLicznikIOdswiezStroneZa(30);
@@ -427,8 +427,15 @@ const TrwajacePrace = (props) => {
                             {praca.work_start}
                         </Table.Cell>
                         <Table.Cell>
-                            <ConfirmButton onClick={(evt) => handlePrzerwijPrace(praca.id)}
-                                content={<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę" />}
+                            <ConfirmButton onClick={(evt) => handlePrzerwijPrace(praca.id, 'LASER')}
+                                content={<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę LASER" />}
+                                useConfirm={praca.czyProgramNiedawnoRozpoczety == true}
+                                confirmContent="Program został niedawno rozpoczęty. Czy na pewno chcesz go przerwać?"
+                                cancelButton='Anuluj' //{<FormattedMessage id="Anuluj" defaultMessage="Anuluj" />}
+                                confirmButton='Przerwij pracę' //{<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę" />}
+                            />
+                            <ConfirmButton onClick={(evt) => handlePrzerwijPrace(praca.id, 'LAS_SUPP')}
+                                content={<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę LAS_SUPP" />}
                                 useConfirm={praca.czyProgramNiedawnoRozpoczety == true}
                                 confirmContent="Program został niedawno rozpoczęty. Czy na pewno chcesz go przerwać?"
                                 cancelButton='Anuluj' //{<FormattedMessage id="Anuluj" defaultMessage="Anuluj" />}
