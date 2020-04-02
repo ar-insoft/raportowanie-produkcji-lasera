@@ -35,7 +35,7 @@ class RaportowanieForm extends Component {
         DataProvider.testKonfiguracji(fromServer => {
             //console.log('RaportowanieForm.componentDidMount', !fromServer.konfiguracja_poprawna, fromServer)
             if (!fromServer.konfiguracja_poprawna) {
-                //this.state.raportujLaser.serverInfo = { error: fromServer.bledy_konfiguracji }
+                this.state.raportujLaser.serverInfo = { error: fromServer.bledy_konfiguracji }
                 //console.log('RaportowanieForm.componentDidMount', this.state.raportujLaser.serverInfo)
                 this.setState({ raportujLaser: Object.assign(this.state.raportujLaser, fromServer) })
             }
