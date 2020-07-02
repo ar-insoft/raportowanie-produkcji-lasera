@@ -1,35 +1,39 @@
 import React, { Component } from 'react';
 import 'semantic-ui-css/semantic.min.css'
-import { addLocaleData, IntlProvider } from 'react-intl'
+import { IntlProvider } from 'react-intl'
 import { ToastContainer, toast } from 'react-toastify'
 import 'react-toastify/dist/ReactToastify.css' 
 import './App.css';
 import RaportowanieForm from './raportowanieLasera/components/RaportowanieForm'
 import ErrorBoundary from './tools/ErrorBoundary'
+import { messagesOf } from './tools/i18nConfig'
 
-let elLocaleData = require('react-intl/locale-data/en')
-let i18nConfig = {
-  locale: 'en',
-  messages: {
-    "Zeskanuj.kod": "Scan the code",
-    "Raportowanie produkcji lasera": "Laser production reporting",
-    "Pracownik": "Employee",
-    "Trwające prace": "Ongoing work",
-    "Detale programu": "Parts of the program",
-    "brak": "no data",
-    "Rozpoczęcie": "Start time",
-    "Akcje": "Actions",
-    "Lista prac lasera": "List of laser works",
-    "Nr czesci": "Part no",
-    "Zlecenie": "Order",
-    "Komponent": "Part",
-    "Operacja": "Operation",
-    "Współczynnik czasu": "Time factor",
-    "Rozpocznij pracę": "Start work",
-    "Przerwij pracę": "Stop work",
-    "Anuluj": "Cancel",
-  }
-};
+// let elLocaleData = require('react-intl/locale-data/en')
+// let i18nConfig = {
+//   locale: 'en',
+//   messages: {
+//     "Zeskanuj.kod": "Scan the code",
+//     "Raportowanie produkcji lasera": "Laser production reporting",
+//     "Pracownik": "Employee",
+//     "Trwające prace": "Ongoing work",
+//     "Detale programu": "Parts of the program",
+//     "brak": "no data",
+//     "Rozpoczęcie": "Start time",
+//     "Akcje": "Actions",
+//     "Lista prac lasera": "List of laser works",
+//     "Nr czesci": "Part no",
+//     "Zlecenie": "Order",
+//     "Komponent": "Part",
+//     "Operacja": "Operation",
+//     "Współczynnik czasu": "Time factor",
+//     "Rozpocznij pracę": "Start work",
+//     "Przerwij pracę": "Stop work",
+//     "Przerwij pracę LASER": "Stop work LASER",
+//     "Przerwij pracę LAS_SUPP": "Stop work LAS_SUPP",
+//     "Anuluj": "Cancel",
+//     "Odświeżenie strony za": "Page refresh in",
+//   }
+// };
 //			Operacja	
 
 class App extends Component {
@@ -39,7 +43,7 @@ class App extends Component {
 
     return (
       <ErrorBoundary>
-        <IntlProvider locale={lang} messages={i18nConfig.messages}>
+        <IntlProvider locale={lang} messages={messagesOf(lang)}>
           <div className="App">
             <RaportowanieForm />
             <ToastContainer

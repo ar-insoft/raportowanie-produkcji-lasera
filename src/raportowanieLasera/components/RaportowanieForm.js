@@ -2,7 +2,8 @@ import React, { Component } from 'react'
 import { Form, Input, Button, Table, Container, List, Header, Confirm, Icon, Segment, Item } from 'semantic-ui-react'
 import { toast } from 'react-toastify'
 import classNames from 'classnames/bind'
-import { FormattedMessage } from 'react-intl'
+import preval from 'preval.macro'
+//import { FormattedMessage } from 'react-intl'
 import logo from '../../bar-code.png';
 import './RaportowanieForm.css'
 import RaportujLaser from '../modules/RaportujLaser'
@@ -12,6 +13,7 @@ import InformacjeZSerwera from './InformacjeZSerwera'
 import { afterSecondsOf, countDownSecondsOnTickOnComplete } from '../modules/Timers'
 import ConfirmButton from './ConfirmButton'
 //import InnerState from '../../tools/InnerState'
+import { Tlumaczenia } from '../../tools/Tlumaczenia'
 
 class RaportowanieForm extends Component {
     constructor(props) {
@@ -184,16 +186,32 @@ class RaportowanieForm extends Component {
         this.scanInputRef.current.focus();
     }
 
+    pad(number) {
+        if (number < 10) {
+            return '0' + number;
+        }
+        return number;
+    }
+
+    formatDate = (date) => {
+        return date.getUTCFullYear() + '-' + this.pad(date.getUTCMonth() + 1) + '-' + this.pad(date.getUTCDate())
+    }
+
     render() {
         const { raportujLaser } = this.state
         const { scanInput, liczba_powtorzen, employee, } = raportujLaser
         const pracownikOdczytany = raportujLaser.isPracownikOdczytany()
         const programOdczytany = raportujLaser.isProgramOdczytany()
+        const buildDate = preval`module.exports = new Date();`
         //console.log('programOdczytany ' + programOdczytany)
+
         return (
             <Container textAlign='center'>
                 <Form autoComplete="off" loading={this.state.isLoading}>
-                    <Header as='h2'><FormattedMessage id="Raportowanie produkcji lasera" defaultMessage="Raportowanie produkcji lasera" /></Header>
+                    <Header as='h2' id={preval`module.exports = new Date();`}>
+                        <Tlumaczenia id="Raportowanie produkcji lasera – SAP" />
+                            <span className="timestamp">{buildDate.substr(0, 10)}</span>
+                    </Header>
                     <Segment.Group>
                         <Segment compact>
                             <div style={{ display: 'flex' }}>
@@ -202,7 +220,7 @@ class RaportowanieForm extends Component {
                                         <Item.Image size='tiny' src={logo} />
 
                                         <Item.Content>
-                                            <Item.Header><FormattedMessage id="Zeskanuj.kod" defaultMessage="Zeskanuj kod" />: </Item.Header>
+                                            <Item.Header><Tlumaczenia id="Zeskanuj.kod" />: </Item.Header>
                                             {/* <Item.Meta>
                                         <span className='price'>$1200</span>
                                         <span className='stay'>1 Month</span>
@@ -230,19 +248,19 @@ class RaportowanieForm extends Component {
                                 <Table.Body>
                                     <Table.Row key='pracownik'>
                                         <Table.Cell width={1}>
-                                            <FormattedMessage id="Pracownik" defaultMessage="Pracownik" />
+                                            <Tlumaczenia id="Pracownik" />
                                     </Table.Cell>
                                         <Table.Cell width={3} className={classNames(
                                             {
                                                 'niepoprawne_dane': !pracownikOdczytany,
                                                 'odczytano_dane': this.state.wlasnieOdczytanoPracownika,
                                             })}>
-                                            {pracownikOdczytany ? raportujLaser.getEmployeeFulname() : <FormattedMessage id="brak" defaultMessage="brak" />}
+                                            {pracownikOdczytany ? raportujLaser.getEmployeeFulname() : <Tlumaczenia id="brak" />}
                                         </Table.Cell>
                                     </Table.Row>
                                     <Table.Row key='prace'>
                                         <Table.Cell>
-                                            <FormattedMessage id="Trwające prace" defaultMessage="Trwające prace" />
+                                            <Tlumaczenia id="Trwające prace" />
                                     </Table.Cell>
                                         <Table.Cell>
                                             {pracownikOdczytany
@@ -262,18 +280,18 @@ class RaportowanieForm extends Component {
                                             {programOdczytany ?
                                                 <Program raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
                                                 :
-                                                <FormattedMessage id="brak" defaultMessage="brak informacji o programie" />}
+                                                <Tlumaczenia id="brak" />}
                                         </Table.Cell>
                                     </Table.Row>
                                     <Table.Row key='detaleProgramu'>
                                         <Table.Cell>
-                                            <FormattedMessage id="Detale programu" defaultMessage="Detale programu" />
+                                            <Tlumaczenia id="Detale programu" />
                                     </Table.Cell>
                                         <Table.Cell className={programOdczytany ? '' : 'niepoprawne_dane'}>
                                             {programOdczytany ?
                                                 <DetaleForm raportujLaser={raportujLaser} handleRozpocznijPrace={this.handleRozpocznijPrace} />
                                                 :
-                                                <FormattedMessage id="brak" defaultMessage="brak" />}
+                                                <Tlumaczenia id="brak" />}
                                         </Table.Cell>
                                     </Table.Row>
                                     {/* <Table.Row key='liczba_powtorzen' disabled>
@@ -295,7 +313,7 @@ class RaportowanieForm extends Component {
                                 </Table.Body>
                             </Table>
                             <a href="/eoffice/production/raportowanie_produkcji_lasera/lista_prac_laser.xml?action=list&raportowanie_produkcji=true">
-                                <FormattedMessage id="Lista prac lasera" defaultMessage="Lista prac lasera" />
+                                <Tlumaczenia id="Lista prac lasera" />
                             </a>
                         </Segment>
                     </Segment.Group>
@@ -368,7 +386,7 @@ class Program extends Component {
                         <List>
                             <List.Item>
                                 <List.Icon name='laptop' />
-                                <List.Content><FormattedMessage id="Zlecenie" defaultMessage="Zlecenie" />: {kartaProgramu.nazwaZlecenia}</List.Content>
+                                <List.Content><Tlumaczenia id="Zlecenie" />: {kartaProgramu.nazwaZlecenia}</List.Content>
                             </List.Item>
                             <List.Item>
                                 <List.Icon name='industry' />
@@ -381,7 +399,7 @@ class Program extends Component {
                             disabled={!pracownikOdczytany || !programOdczytany || czyPracownikPracujeJuzNadProgramem}
                         >
                             <Icon name='send' />
-                            <FormattedMessage id="Rozpocznij pracę" defaultMessage="Rozpocznij pracę" />
+                            <Tlumaczenia id="Rozpocznij pracę" />
                         </Button>
                         <Confirm dimmer='inverted'
                             open={this.state.showConfirmRozpocznijPrace}
@@ -410,10 +428,10 @@ const TrwajacePrace = (props) => {
                         Program
                 </Table.Cell>
                     <Table.Cell>
-                        <FormattedMessage id="Rozpoczęcie" defaultMessage="Rozpoczęcie" />
+                        <Tlumaczenia id="Rozpoczęcie" />
                 </Table.Cell>
                     <Table.Cell>
-                        <FormattedMessage id="Akcje" defaultMessage="Akcje" />
+                        <Tlumaczenia id="Akcje" />
                 </Table.Cell>
                 </Table.Row>
             </Table.Header>
@@ -428,18 +446,18 @@ const TrwajacePrace = (props) => {
                         </Table.Cell>
                         <Table.Cell>
                             <ConfirmButton onClick={(evt) => handlePrzerwijPrace(praca.id, 'LASER')}
-                                content={<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę LASER" />}
-                                useConfirm={praca.czyProgramNiedawnoRozpoczety == true}
+                                content={<Tlumaczenia id="Przerwij pracę LASER" />}
+                                useConfirm={praca.czyProgramNiedawnoRozpoczety === true}
                                 confirmContent="Program został niedawno rozpoczęty. Czy na pewno chcesz go przerwać?"
-                                cancelButton='Anuluj' //{<FormattedMessage id="Anuluj" defaultMessage="Anuluj" />}
-                                confirmButton='Przerwij pracę' //{<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę" />}
+                                cancelButton='Anuluj' //{<Tlumaczenia id="Anuluj" />}
+                                confirmButton='Przerwij pracę' //{<Tlumaczenia id="Przerwij pracę" />}
                             />
                             <ConfirmButton onClick={(evt) => handlePrzerwijPrace(praca.id, 'LAS_SUPP')}
-                                content={<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę LAS_SUPP" />}
-                                useConfirm={praca.czyProgramNiedawnoRozpoczety == true}
+                                content={<Tlumaczenia id="Przerwij pracę LAS_SUPP" />}
+                                useConfirm={praca.czyProgramNiedawnoRozpoczety ===  true}
                                 confirmContent="Program został niedawno rozpoczęty. Czy na pewno chcesz go przerwać?"
-                                cancelButton='Anuluj' //{<FormattedMessage id="Anuluj" defaultMessage="Anuluj" />}
-                                confirmButton='Przerwij pracę' //{<FormattedMessage id="Przerwij pracę" defaultMessage="Przerwij pracę" />}
+                                cancelButton='Anuluj' //{<Tlumaczenia id="Anuluj" />}
+                                confirmButton='Przerwij pracę' //{<Tlumaczenia id="Przerwij pracę" />}
                             />
                             {/* <ConfirmButton onClick={(evt) => handleZakonczPrace(praca.id)}
                                 disabled={praca.trwajaInnePrace} content="Zakończ pracę"
@@ -479,7 +497,7 @@ const TrwajacePrace = (props) => {
 const OdswiezenieStronyZa = props => (
     <React.Fragment>
         <span className='odswiezStroneZa'> </span>
-        {props.sekund > 0 && <span>Odświeżenie strony za {props.sekund}</span>}
+        {props.sekund > 0 && <span><Tlumaczenia id="Odświeżenie strony za" /> {props.sekund}</span>}
     </React.Fragment>
 );
 
