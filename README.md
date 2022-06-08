@@ -2,4 +2,4 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 This project is for internal use.
 
 # Raportowanie produkcji lasera – SAP
-![ekran raportowania](doc/raportowanie_produkcji_lasera_scr .png?raw=true "ekran raportowania")
+![ekran raportowania](doc/raportowanie_produkcji_lasera_scr.png?raw=true "ekran raportowania")
