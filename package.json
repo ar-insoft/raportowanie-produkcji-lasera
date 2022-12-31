@@ -9,7 +9,7 @@
     "preval.macro": "^5.0.0",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-scripts": "3.4.1",
+    "react-scripts": "5.0.1",
     "react-toastify": "^5.5.0",
     "rxjs": "^6.5.2",
     "semantic-ui-css": "2.4.1",
